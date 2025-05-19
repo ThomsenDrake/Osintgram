@@ -5,6 +5,11 @@ import urllib
 import os
 import codecs
 from pathlib import Path
+import logging
+
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.INFO))
+logger = logging.getLogger(__name__)
 
 import requests
 import ssl
@@ -36,23 +41,26 @@ class Osintgram:
 
 
     def __init__(self, target, is_file, is_json, is_cli, output_dir, clear_cookies):
-        self.output_dir = output_dir or self.output_dir        
+        """Set up initial state and authenticate with Instagram."""
+        self.output_dir = output_dir or self.output_dir
         u = config.getUsername()
         p = config.getPassword()
         self.clear_cookies(clear_cookies)
         self.cli_mode = is_cli
         if not is_cli:
-          print("\nAttempt to login...")
+            logger.info("Attempt to login...")
         self.login(u, p)
         self.setTarget(target)
         self.writeFile = is_file
         self.jsonDump = is_json
 
-    def clear_cookies(self,clear_cookies):
+    def clear_cookies(self, clear_cookies):
+        """Remove cached session data if requested."""
         if clear_cookies:
             self.clear_cache()
 
     def setTarget(self, target):
+        """Configure the target profile for subsequent requests."""
         self.target = target
         user = self.get_user(target)
         self.target_id = user['id']
@@ -106,12 +114,14 @@ class Osintgram:
         print('\n')
 
     def change_target(self):
+        """Prompt the user for a new target username."""
         pc.printout("Insert new target username: ", pc.YELLOW)
         line = input()
         self.setTarget(line)
         return
 
     def get_addrs(self):
+        """Retrieve and display geolocation information from target posts."""
         if self.check_private_profile():
             return
 
@@ -179,6 +189,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_captions(self):
+        """Print captions from the target's feed."""
         if self.check_private_profile():
             return
 
@@ -237,6 +248,7 @@ class Osintgram:
         return
 
     def get_total_comments(self):
+        """Count total comments across all posts."""
         if self.check_private_profile():
             return
 
@@ -270,6 +282,7 @@ class Osintgram:
         pc.printout(" comments in " + str(posts) + " posts\n")
 
     def get_comment_data(self):
+        """List every comment on the target's posts."""
         if self.check_private_profile():
             return
 
@@ -312,6 +325,7 @@ class Osintgram:
 
 
     def get_followers(self):
+        """Show followers of the target account."""
         if self.check_private_profile():
             return
 
@@ -378,6 +392,7 @@ class Osintgram:
         print(t)
 
     def get_followings(self):
+        """Show accounts followed by the target."""
         if self.check_private_profile():
             return
 
@@ -443,6 +458,7 @@ class Osintgram:
         print(t)
 
     def get_hashtags(self):
+        """Analyze hashtags used by the target."""
         if self.check_private_profile():
             return
 
@@ -508,6 +524,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_user_info(self):
+        """Display detailed information about the target account."""
         try:
             endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
             content = self.api._call_api(endpoint)
@@ -582,12 +599,13 @@ class Osintgram:
                     json.dump(user, f)
 
         except ClientError as e:
-            print(e)
+            logger.error("%s", e)
             pc.printout("Oops... " + str(self.target) + " non exist, please enter a valid username.", pc.RED)
             pc.printout("\n")
             exit(2)
 
     def get_total_likes(self):
+        """Count likes across all posts."""
         if self.check_private_profile():
             return
 
@@ -621,6 +639,7 @@ class Osintgram:
         pc.printout(" likes in " + str(posts) + " posts\n")
 
     def get_media_type(self):
+        """Count how many photos and videos the target posted."""
         if self.check_private_profile():
             return
 
@@ -669,6 +688,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_people_who_commented(self):
+        """Show a ranked list of accounts that commented on the target."""
         if self.check_private_profile():
             return
 
@@ -727,6 +747,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_people_who_tagged(self):
+        """Show users who tagged the target in photos."""
         if self.check_private_profile():
             return
 
@@ -795,6 +816,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_photo_description(self):
+        """Fetch description text for each photo."""
         if self.check_private_profile():
             return
 
@@ -845,6 +867,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_user_photo(self):
+        """Download photos posted by the target."""
         if self.check_private_profile():
             return
 
@@ -915,6 +938,7 @@ class Osintgram:
         pc.printout("\nWoohoo! We downloaded " + str(counter) + " photos (saved in " + self.output_dir + " folder) \n", pc.GREEN)
 
     def get_user_propic(self):
+        """Download the target's profile picture."""
 
         try:
             endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
@@ -939,11 +963,12 @@ class Osintgram:
         
         except ClientError as e:
             error = json.loads(e.error_response)
-            print(error['message'])
-            print(error['error_title'])
+            logger.error(error.get('message'))
+            logger.error(error.get('error_title'))
             exit(2)
 
     def get_user_stories(self):
+        """Download current stories from the target."""
         if self.check_private_profile():
             return
 
@@ -973,6 +998,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_people_tagged_by_user(self):
+        """Show users tagged by the target in posts."""
         pc.printout("Searching for users tagged by target...\n")
 
         ids = []
@@ -999,8 +1025,7 @@ class Osintgram:
                         counter = counter + 1
         except AttributeError as ae:
             pc.printout("\nERROR: an error occurred: ", pc.RED)
-            print(ae)
-            print("")
+            logger.error("%s", ae)
             pass
 
         if len(ids) > 0:
@@ -1046,6 +1071,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_user(self, username):
+        """Retrieve basic user information by username."""
         try:
             content = self.api.username_info(username)
             if self.writeFile:
@@ -1063,15 +1089,16 @@ class Osintgram:
             pc.printout('ClientError {0!s} (Code: {1:d}, Response: {2!s})'.format(e.msg, e.code, e.error_response), pc.RED)
             error = json.loads(e.error_response)
             if 'message' in error:
-                print(error['message'])
+                logger.error(error['message'])
             if 'error_title' in error:
-                print(error['error_title'])
+                logger.error(error['error_title'])
             if 'challenge' in error:
-                print("Please follow this link to complete the challenge: " + error['challenge']['url'])    
+                logger.error("Please follow this link to complete the challenge: %s", error['challenge']['url'])
             sys.exit(2)
         
 
     def set_write_file(self, flag):
+        """Enable or disable writing results to files."""
         if flag:
             pc.printout("Write to file: ")
             pc.printout("enabled", pc.GREEN)
@@ -1084,6 +1111,7 @@ class Osintgram:
         self.writeFile = flag
 
     def set_json_dump(self, flag):
+        """Enable or disable exporting results to JSON."""
         if flag:
             pc.printout("Export to JSON: ")
             pc.printout("enabled", pc.GREEN)
@@ -1096,11 +1124,12 @@ class Osintgram:
         self.jsonDump = flag
 
     def login(self, u, p):
+        """Authenticate with Instagram using stored settings when possible."""
         try:
             settings_file = "config/settings.json"
             if not os.path.isfile(settings_file):
                 # settings file does not exist
-                print(f'Unable to find file: {settings_file!s}')
+                logger.info('Unable to find file: %s', settings_file)
 
                 # login new
                 self.api = AppClient(auto_patch=True, authenticate=True, username=u, password=p,
@@ -1118,7 +1147,7 @@ class Osintgram:
                     on_login=lambda x: self.onlogin_callback(x, settings_file))
 
         except (ClientCookieExpiredError, ClientLoginRequiredError) as e:
-            print(f'ClientCookieExpiredError/ClientLoginRequiredError: {e!s}')
+            logger.warning('ClientCookieExpiredError/ClientLoginRequiredError: %s', e)
 
             # Login expired
             # Do relogin but use default ua, keys and such
@@ -1133,44 +1162,50 @@ class Osintgram:
             pc.printout(e.msg, pc.RED)
             pc.printout("\n")
             if 'challenge' in error:
-                print("Please follow this link to complete the challenge: " + error['challenge']['url'])
+                logger.error('Please follow this link to complete the challenge: %s', error['challenge']['url'])
             exit(9)
 
     def to_json(self, python_object):
+        """Helper for serializing bytes in cached settings."""
         if isinstance(python_object, bytes):
             return {'__class__': 'bytes',
                     '__value__': codecs.encode(python_object, 'base64').decode()}
         raise TypeError(repr(python_object) + ' is not JSON serializable')
 
     def from_json(self, json_object):
+        """Deserialize bytes values from cached settings."""
         if '__class__' in json_object and json_object['__class__'] == 'bytes':
             return codecs.decode(json_object['__value__'].encode(), 'base64')
         return json_object
 
     def onlogin_callback(self, api, new_settings_file):
+        """Save updated session settings after login."""
         cache_settings = api.settings
         with open(new_settings_file, 'w') as outfile:
             json.dump(cache_settings, outfile, default=self.to_json)
             # print('SAVED: {0!s}'.format(new_settings_file))
 
     def check_following(self):
+        """Return True if the authenticated user follows the target."""
         if str(self.target_id) == self.api.authenticated_user_id:
             return True
         endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
         return self.api._call_api(endpoint)['user_detail']['user']['friendship_status']['following']
 
     def check_private_profile(self):
+        """Warn if the target profile is private and not followed."""
         if self.is_private and not self.following:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             send = input("Do you want send a follow request? [Y/N]: ")
             if send.lower() == "y":
                 self.api.friendships_create(self.target_id)
-                print("Sent a follow request to target. Use this command after target accepting the request.")
+                logger.info("Sent a follow request to target. Use this command after target accepting the request.")
 
             return True
         return False
 
     def get_fwersemail(self):
+        """Fetch public emails of the target's followers."""
         if self.check_private_profile():
             return
 
@@ -1277,6 +1312,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_fwingsemail(self):
+        """Fetch public emails of accounts followed by the target."""
         if self.check_private_profile():
             return
 
@@ -1383,6 +1419,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_fwingsnumber(self):
+        """Fetch phone numbers of accounts followed by the target."""
         if self.check_private_profile():
             return
        
@@ -1489,6 +1526,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_fwersnumber(self):
+        """Fetch phone numbers of the target's followers."""
         if self.check_private_profile():
             return
 
@@ -1596,6 +1634,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_comments(self):
+        """Print out every comment text from the target's posts."""
         if self.check_private_profile():
             return
 
@@ -1656,6 +1695,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def clear_cache(self):
+        """Delete cached login settings."""
         try:
             f = open("config/settings.json",'w')
             f.write("{}")

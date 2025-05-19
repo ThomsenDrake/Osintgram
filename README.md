@@ -82,6 +82,9 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
 
     * As an interactive prompt `python3 main.py <target username>`
     * Or execute your command straight away `python3 main.py <target username> --command <command>`
+
+8. You can adjust verbosity by setting the `LOG_LEVEL` environment variable
+   (e.g., `LOG_LEVEL=DEBUG`).
     
 ### Use Osintgram v2 (beta)
 You can use Osintgram2 beta just switching to `v2` [branch](https://github.com/Datalux/Osintgram/tree/v2).
