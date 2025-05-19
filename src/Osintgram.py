@@ -1212,7 +1212,10 @@ class Osintgram:
             results = []
             
             pc.printout("Do you want to get all emails? y/n: ", pc.YELLOW)
-            value = input()
+            if self.cli_mode:
+                value = "y"
+            else:
+                value = input()
             
             if value == str("y") or value == str("yes") or value == str("Yes") or value == str("YES"):
                 value = len(followers)
@@ -1315,7 +1318,10 @@ class Osintgram:
             results = []
             
             pc.printout("Do you want to get all emails? y/n: ", pc.YELLOW)
-            value = input()
+            if self.cli_mode:
+                value = "y"
+            else:
+                value = input()
             
             if value == str("y") or value == str("yes") or value == str("Yes") or value == str("YES"):
                 value = len(followings)
@@ -1421,7 +1427,10 @@ class Osintgram:
             results = []
         
             pc.printout("Do you want to get all phone numbers? y/n: ", pc.YELLOW)
-            value = input()
+            if self.cli_mode:
+                value = "y"
+            else:
+                value = input()
             
             if value == str("y") or value == str("yes") or value == str("Yes") or value == str("YES"):
                 value = len(followings)
@@ -1528,7 +1537,10 @@ class Osintgram:
             results = []
             
             pc.printout("Do you want to get all phone numbers? y/n: ", pc.YELLOW)
-            value = input()
+            if self.cli_mode:
+                value = "y"
+            else:
+                value = input()
             
             if value == str("y") or value == str("yes") or value == str("Yes") or value == str("YES"):
                 value = len(followings)
